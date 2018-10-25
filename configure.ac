@@ -166,6 +166,16 @@ AC_ARG_WITH([mem-uservars],
 
 AC_DEFINE_UNQUOTED([ENV_MEM_USERVARS], [${ENV_MEM_USERVARS}], [Reserved memory for user variables])
 
+AC_ARG_ENABLE([boot-keys],
+	      AS_HELP_STRING([--enable-boot-keys], [enable on-boot hot keys for debugging]),
+	      [
+		EBG_BOOT_KEYS=[enabled]
+		AC_DEFINE([EBG_BOOT_KEYS],[1],[Enable on-boot hot keys])
+	      ],
+	      [
+		EBG_BOOT_KEYS=[disabled]
+	      ])
+
 dnl pkg-config
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 if test "x$PKG_CONFIG" = "xno"; then
@@ -196,4 +206,6 @@ AC_MSG_RESULT([
 	environment backend:     ${ENV_API_FILE}.c
 	number of config parts:  ${ENV_NUM_CONFIG_PARTS}
 	reserved for uservars:   ${ENV_MEM_USERVARS} bytes
+
+	ebg boot keys:           ${EBG_BOOT_KEYS}
 ])

@@ -22,6 +22,8 @@
 #include <configuration.h>
 #include "version.h"
 #include "utils.h"
+#include "config.h"
+#include "envdata.h"
 
 extern const unsigned long init_array_start[];
 extern const unsigned long init_array_end[];
@@ -198,11 +200,36 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 			   status);
 	}
 
+#ifdef EBG_BOOT_KEYS
+	EFI_INPUT_KEY key;
+	CHAR16 input_buffer[ENV_STRING_LENGTH];
+
+	/* Give user a chance to change the boot parameters on the fly */
+	Color(system_table, 15, 0);
+	Print(L"Press <a> to change kernel arguments\n");
+	Color(system_table, 7, 0);
+
+	/* Wait for key for 3 seconds */
+	WaitForSingleEvent(system_table->ConIn->WaitForKey, 30000000);
+
+	input_buffer[0] = L'\0';
+	if (uefi_call_wrapper(system_table->ConIn->ReadKeyStroke,
+			      2, system_table->ConIn, &key) == EFI_SUCCESS) {
+		if (key.UnicodeChar == L'a') {
+			Input(L"\nInput kernel args (empty str to cancel): ",
+			      input_buffer, ENV_STRING_LENGTH - 1);
+		}
+	}
+	if (StrLen(input_buffer) > 0) {
+		StrCpy(bg_loader_params.payload_options, input_buffer);
+	}
+#endif //EBG_BOOT_KEYS
+
 	loaded_image->LoadOptions = bg_loader_params.payload_options;
 	loaded_image->LoadOptionsSize =
 	    (StrLen(bg_loader_params.payload_options) + 1) * sizeof(CHAR16);
 
-	Print(L"Starting %s with watchdog set to %d seconds\n",
+	Print(L"\nStarting %s with watchdog set to %d seconds\n",
 	      bg_loader_params.payload_path, bg_loader_params.timeout);
 
 	return uefi_call_wrapper(BS->StartImage, 3, payload_handle, 0, 0);
